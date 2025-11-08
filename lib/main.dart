@@ -13,79 +13,53 @@ class SimpleBrowser extends StatelessWidget {
     return MaterialApp(
       title: 'Simple Browser',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const WebViewPage(),
+      home: const WebHome(),
     );
   }
 }
 
-class WebViewPage extends StatefulWidget {
-  const WebViewPage({super.key});
+class WebHome extends StatefulWidget {
+  const WebHome({super.key});
 
   @override
-  State<WebViewPage> createState() => _WebViewPageState();
+  State<WebHome> createState() => _WebHomeState();
 }
 
-class _WebViewPageState extends State<WebViewPage> {
-  late final WebViewController _controller;
-  bool _isLoading = true;
-  final String homeUrl = "https://google.com";
+class _WebHomeState extends State<WebHome> {
+  final controller = WebViewController();
+  final TextEditingController urlController = TextEditingController(text: "https://google.com");
 
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
+    controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse(homeUrl))
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageFinished: (_) => setState(() => _isLoading = false),
-      ));
+      ..loadRequest(Uri.parse(urlController.text));
+  }
+
+  void _loadUrl() {
+    final url = urlController.text.trim();
+    if (url.isNotEmpty) {
+      final uri = url.startsWith('http') ? url : 'https://$url';
+      controller.loadRequest(Uri.parse(uri));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("🌐 Simple Browser"),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => _controller.reload(),
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator()),
-        ],
-      ),
-      bottomNavigationBar: BottomAppBar(
-        color: Colors.blueAccent,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () async {
-                if (await _controller.canGoBack()) _controller.goBack();
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.home, color: Colors.white),
-              onPressed: () => _controller.loadRequest(Uri.parse(homeUrl)),
-            ),
-            IconButton(
-              icon: const Icon(Icons.arrow_forward, color: Colors.white),
-              onPressed: () async {
-                if (await _controller.canGoForward()) _controller.goForward();
-              },
-            ),
-          ],
+        title: TextField(
+          controller: urlController,
+          decoration: const InputDecoration(border: InputBorder.none, hintText: "Enter URL..."),
+          onSubmitted: (_) => _loadUrl(),
+          textInputAction: TextInputAction.go,
         ),
+        actions: [
+          IconButton(icon: const Icon(Icons.search), onPressed: _loadUrl),
+        ],
       ),
+      body: WebViewWidget(controller: controller),
     );
   }
 }
