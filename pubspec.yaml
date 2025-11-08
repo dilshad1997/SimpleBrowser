@@ -10,3 +10,4 @@ dependencies:
   flutter:
     sdk: flutter
   webview_flutter: ^4.7.0
+webview_flutter: ^4.8.0
